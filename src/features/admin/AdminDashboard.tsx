@@ -3,16 +3,18 @@ import { cn } from '@/lib/utils';
 import { Zap, Trash2, UploadCloud, Users, Database, PlaySquare, ShieldCheck } from 'lucide-react';
 import { DB } from '@/lib/db';
 import { UserList } from './UserList';
+import { useTranslation } from '@/lib/i18n';
 
 export function AdminDashboard() {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'users' | 'content' | 'story'>('content');
     const [isProcessing, setIsProcessing] = useState(false);
     const [jsonInput, setJsonInput] = useState('');
 
     const tabs = [
-        { id: 'users' as const, label: 'Benutzer', icon: Users },
-        { id: 'content' as const, label: 'Inhalte', icon: Database },
-        { id: 'story' as const, label: 'Storymodus', icon: PlaySquare },
+        { id: 'users' as const, label: t('benutzerverwaltung'), icon: Users },
+        { id: 'content' as const, label: t('inhalte'), icon: Database },
+        { id: 'story' as const, label: t('story_modus'), icon: PlaySquare },
     ];
 
     const handleBatchImport = async () => {
@@ -45,7 +47,7 @@ export function AdminDashboard() {
                     <ShieldCheck className="h-8 w-8 text-primary" />
                     <h1 className="text-3xl font-black text-[#1A1A1A]">Admin Dashboard</h1>
                 </div>
-                <p className="text-muted-foreground">Verwalte Lektionen, Benutzer & Story-Inhalte.</p>
+                <p className="text-muted-foreground">{t('verwaltung_beschreibung')}</p>
             </header>
 
             <div className="flex gap-2 mb-8 bg-[#F0EEE6] p-1.5 rounded-2xl w-fit">

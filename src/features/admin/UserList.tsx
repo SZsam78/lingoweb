@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import { ShieldCheck, User, Trash2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import { collection, getDocs, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { ShieldCheck, User, Trash2, ChevronDown, ChevronUp, Lock, Check, X, Plus } from 'lucide-react';
+import { DB } from '@/lib/db';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 interface UserProfile {
     id: string;
@@ -14,6 +16,7 @@ interface UserProfile {
 }
 
 export function UserList() {
+    const { t } = useTranslation();
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -98,12 +101,12 @@ export function UserList() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-black">Benutzerverwaltung</h2>
+                <h2 className="text-xl font-black">{t('benutzerverwaltung')}</h2>
                 <button
                     onClick={() => setShowCreateDialog(true)}
                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
                 >
-                    Benutzer anlegen
+                    {t('benutzer_anlegen')}
                 </button>
             </div>
 
@@ -196,10 +199,10 @@ export function UserList() {
 
                                     <div className="flex items-center justify-between pt-4 border-t border-dashed">
                                         <button className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">
-                                            <Trash2 className="h-3.5 w-3.5" /> Benutzer löschen
+                                            <Trash2 className="h-3.5 w-3.5" /> {t('benutzer_loeschen')}
                                         </button>
                                         <button className="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] text-white rounded-xl text-xs font-bold">
-                                            <Lock className="h-3.5 w-3.5" /> Passwort zurücksetzen
+                                            <Lock className="h-3.5 w-3.5" /> {t('passwort_zuruecksetzen')}
                                         </button>
                                     </div>
                                 </div>

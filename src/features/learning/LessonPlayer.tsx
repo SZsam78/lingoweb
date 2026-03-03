@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, CheckCircle, RotateCcw, Lightbulb } from 'lucide-react';
 import { TaskRenderer } from './TaskRenderer';
 import { DB } from '@/lib/db';
+import { useTranslation } from '@/lib/i18n';
 import { AuthService } from '@/lib/auth';
 
 interface LessonPlayerProps {
@@ -12,6 +13,7 @@ interface LessonPlayerProps {
 }
 
 export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
+    const { t } = useTranslation();
     const user = AuthService.getCurrentUser();
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -132,26 +134,26 @@ export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
                     disabled={currentSectionIndex === 0}
                     className="px-6 py-2 rounded-xl border font-medium disabled:opacity-50 hover:bg-slate-50 transition-colors"
                 >
-                    Zurück
+                    {t('zurueck')}
                 </button>
                 <div className="flex gap-2">
                     <button
                         onClick={handleReset}
                         className="flex items-center gap-2 px-6 py-2 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors"
                     >
-                        <RotateCcw className="h-4 w-4" /> Zurücksetzen
+                        <RotateCcw className="h-4 w-4" /> {t('zuruecksetzen')}
                     </button>
                     <button
                         onClick={() => setShowResults(prev => ({ ...prev, [currentSection.id]: true }))}
                         className="flex items-center gap-2 px-6 py-2 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-colors"
                     >
-                        <Lightbulb className="h-4 w-4" /> Lösung
+                        <Lightbulb className="h-4 w-4" /> {t('loesung')}
                     </button>
                     <button
                         onClick={handleCheck}
                         className="flex items-center gap-2 px-8 py-2 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity"
                     >
-                        <CheckCircle className="h-4 w-4" /> Prüfen
+                        <CheckCircle className="h-4 w-4" /> {t('pruefen')}
                     </button>
                 </div>
                 <button
@@ -160,7 +162,7 @@ export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
                     }}
                     className="px-6 py-2 rounded-xl border font-medium hover:bg-slate-50 transition-colors group"
                 >
-                    {currentSectionIndex === lesson.sections.length - 1 ? "Abschließen" : "Weiter"}
+                    {currentSectionIndex === lesson.sections.length - 1 ? t('abschliessen') : t('weiter')}
                     <ChevronRight className="inline h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </button>
             </footer>

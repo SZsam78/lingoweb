@@ -10,6 +10,7 @@ import { AdminDashboard } from './features/admin/AdminDashboard';
 import { StoryMode } from './features/story/StoryMode';
 import { Login } from './features/auth/Login';
 import { AuthService, User } from './lib/auth';
+import { useTranslation } from './lib/i18n';
 
 type ViewState =
     | { type: 'modules' }
@@ -62,23 +63,25 @@ function App() {
         }
     };
 
+    const { t } = useTranslation();
+
     const getBreadcrumbs = () => {
-        const bcs = [{ label: 'Lernplan', onClick: () => setView({ type: 'modules' }) }];
+        const bcs = [{ label: t('lernplan'), onClick: () => setView({ type: 'modules' }) }];
 
         if (view.type === 'artikel') {
-            bcs.push({ label: 'Artikeltrainer', onClick: () => { } });
+            bcs.push({ label: t('artikeltrainer'), onClick: () => { } });
         } else if (view.type === 'story') {
-            bcs.push({ label: 'Story-Modus', onClick: () => { } });
+            bcs.push({ label: t('story_modus'), onClick: () => { } });
         } else if (view.type === 'admin') {
-            bcs.push({ label: 'Admin-Bereich', onClick: () => { } });
+            bcs.push({ label: t('admin_bereich'), onClick: () => { } });
         } else if (view.type === 'lessons') {
             bcs.push({ label: view.moduleId, onClick: () => { } });
         } else if (view.type === 'player') {
             const [mod] = view.lessonId.split('-');
             bcs.push({ label: mod, onClick: () => setView({ type: 'lessons', moduleId: mod }) });
-            bcs.push({ label: `Lektion ${view.lessonId.split('-L')[1]}`, onClick: () => { } });
+            bcs.push({ label: `${t('lektionen')} ${view.lessonId.split('-L')[1]}`, onClick: () => { } });
         } else if (view.type === 'settings') {
-            bcs.push({ label: 'Einstellungen', onClick: () => { } });
+            bcs.push({ label: t('einstellungen'), onClick: () => { } });
         }
 
         return bcs;

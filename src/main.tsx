@@ -4,10 +4,14 @@ import App from './App';
 import './index.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import { LanguageProvider } from './lib/i18n';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <ErrorBoundary>
-            <App />
+            <LanguageProvider>
+                <App />
+            </LanguageProvider>
         </ErrorBoundary>
     </React.StrictMode>,
 );

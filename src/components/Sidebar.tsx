@@ -1,5 +1,6 @@
 import { LayoutGrid, Settings, HelpCircle, LogOut, GraduationCap, PlaySquare, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 interface SidebarProps {
     activeView: string;
@@ -8,12 +9,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeView, onNavigate, userRole = 'user' }: SidebarProps) {
+    const { t } = useTranslation();
+
     const items = [
-        { id: 'modules', label: 'Lernplan', icon: LayoutGrid },
-        { id: 'artikel', label: 'Artikeltrainer', icon: GraduationCap },
-        { id: 'story', label: 'Story-Modus', icon: PlaySquare },
-        ...(userRole === 'admin' ? [{ id: 'admin', label: 'Admin-Bereich', icon: ShieldCheck }] : []),
-        { id: 'settings', label: 'Einstellungen', icon: Settings },
+        { id: 'modules', label: t('lernplan'), icon: LayoutGrid },
+        { id: 'artikel', label: t('artikeltrainer'), icon: GraduationCap },
+        { id: 'story', label: t('story_modus'), icon: PlaySquare },
+        ...(userRole === 'admin' ? [{ id: 'admin', label: t('admin_bereich'), icon: ShieldCheck }] : []),
+        { id: 'settings', label: t('einstellungen'), icon: Settings },
     ];
 
     return (
@@ -73,7 +76,7 @@ export function Sidebar({ activeView, onNavigate, userRole = 'user' }: SidebarPr
 
                 <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-muted-foreground hover:bg-[#F0EEE6] transition-all font-bold text-sm">
                     <LogOut className="h-5 w-5" />
-                    Abmelden
+                    {t('abmelden')}
                 </button>
             </div>
         </aside>

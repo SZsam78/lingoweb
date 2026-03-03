@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { AuthService, User } from '@/lib/auth';
 import { ShieldCheck, LogIn, Loader2, Info } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 interface LoginProps {
     onLogin: (user: User) => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export function Login({ onLogin }: LoginProps) {
                         >
                             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                                 <>
-                                    Anmelden
+                                    {t('anmelden')}
                                     <div className="h-2 w-2 rounded-full bg-primary group-hover:scale-150 transition-transform" />
                                 </>
                             )}

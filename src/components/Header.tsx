@@ -1,6 +1,8 @@
-import { ChevronLeft, Home, ChevronRight, LogOut, User as UserIcon } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, Home, ChevronRight, LogOut, User as UserIcon, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from '@/lib/auth';
+import { useTranslation, Language } from '@/lib/i18n';
 
 interface Breadcrumb {
     label: string;
@@ -17,6 +19,15 @@ interface HeaderProps {
 }
 
 export function Header({ breadcrumbs, onBack, canBack, onHome, user, onLogout }: HeaderProps) {
+    const { language, setLanguage, t } = useTranslation();
+    const [showLangMenu, setShowLangMenu] = useState(false);
+
+    const languages: { code: Language; label: string; flag: string }[] = [
+        { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+        { code: 'en', label: 'English', flag: '🇺🇸' },
+        { code: 'fr', label: 'Français', flag: '🇫🇷' },
+        { code: 'es', label: 'Español', flag: '🇪🇸' },
+    ];
     return (
         <header className="h-16 border-b bg-card px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-card/80">
             <div className="flex items-center gap-6">
@@ -60,6 +71,41 @@ export function Header({ breadcrumbs, onBack, canBack, onHome, user, onLogout }:
             </div>
 
             <div className="flex items-center gap-4">
+                {/* Language Switcher */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowLangMenu(!showLangMenu)}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl border border-transparent hover:border-primary/20 transition-all font-bold text-xs uppercase tracking-widest"
+                    >
+                        <Globe className="h-4 w-4 text-primary" />
+                        <span className="hidden sm:inline">{languages.find(l => l.code === language)?.flag}</span>
+                    </button>
+
+                    {showLangMenu && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl border shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
+                            {languages.map(lang => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => {
+                                        setLanguage(lang.code);
+                                        setShowLangMenu(false);
+                                    }}
+                                    className={cn(
+                                        "w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors",
+                                        language === lang.code ? "bg-primary text-white" : "hover:bg-slate-50 text-slate-600"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span>{lang.flag}</span>
+                                        <span>{lang.label}</span>
+                                    </div>
+                                    {language === lang.code && <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 <div className="flex flex-col items-end mr-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#1A1A1A]">{user.name}</span>
                     <span className="text-[8px] font-bold text-muted-foreground uppercase">{user.role}</span>
