@@ -7,29 +7,35 @@ import renderer from 'vite-plugin-electron-renderer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Check if we are building for Electron
+const isElectron = process.env.VITE_ELECTRON === 'true';
+const isVercel = !!process.env.VERCEL;
+
 export default defineConfig({
     plugins: [
         react(),
-        electron([
-            {
-                entry: 'electron/main.ts',
-                vite: {
-                    build: {
-                        outDir: 'dist-electron',
-                        rollupOptions: {
-                            external: ['better-sqlite3'],
+        ...(isElectron && !isVercel ? [
+            electron([
+                {
+                    entry: 'electron/main.ts',
+                    vite: {
+                        build: {
+                            outDir: 'dist-electron',
+                            rollupOptions: {
+                                external: ['better-sqlite3'],
+                            },
                         },
                     },
                 },
-            },
-            {
-                entry: 'electron/preload.ts',
-                onstart(options) {
-                    options.reload();
+                {
+                    entry: 'electron/preload.ts',
+                    onstart(options) {
+                        options.reload();
+                    },
                 },
-            },
-        ]),
-        renderer(),
+            ]),
+            renderer(),
+        ] : []),
     ],
     resolve: {
         alias: {
