@@ -102,4 +102,24 @@ export class DB {
             await deleteDoc(doc(firestore, 'users', uid));
         }
     }
+
+    static async getStats() {
+        if (!window.electronAPI) {
+            const lessons = await getDocs(collection(firestore, 'lessons'));
+            const users = await getDocs(collection(firestore, 'users'));
+            const vocab = await getDocs(collection(firestore, 'vocabulary'));
+            return {
+                lessons: lessons.size,
+                users: users.size,
+                vocabulary: vocab.size,
+                mode: 'Cloud (Firestore)'
+            };
+        }
+
+        const lessons = await this.query('SELECT count(*) as count FROM lessons');
+        return {
+            lessons: (lessons[0] as any)?.count || 0,
+            mode: 'Local (SQLite)'
+        };
+    }
 }

@@ -6,18 +6,12 @@ export function DiagnosticsPanel() {
     const [dbStatus, setDbStatus] = useState<any>(null);
     const [env, setEnv] = useState<any>(null);
     const [dbTestResult, setDbTestResult] = useState<string>('');
+    const [cloudStatus, setCloudStatus] = useState<any>(null);
 
     const loadStatus = async () => {
         try {
-            const lessons = await DB.query('SELECT count(*) as count FROM lessons');
-            const media = await DB.query('SELECT count(*) as count FROM media');
-            const progress = await DB.query('SELECT count(*) as count FROM progress');
-
-            setDbStatus({
-                lessons: (lessons[0] as any)?.count || 0,
-                media: (media[0] as any)?.count || 0,
-                progress: (progress[0] as any)?.count || 0,
-            });
+            const stats = await DB.getStats();
+            setCloudStatus(stats);
 
             setEnv({
                 userAgent: navigator.userAgent,
@@ -163,31 +157,49 @@ export function DiagnosticsPanel() {
                     </div>
                 </div>
 
-                {/* Database */}
-                <div className="bg-white border rounded-2xl p-6 shadow-sm space-y-4">
-                    <h3 className="font-bold flex items-center gap-2 text-slate-800">
-                        <Database className="h-5 w-5 text-purple-500" /> SQLite Database
+                {/* Cloud Database */}
+                <div className="bg-slate-900 border rounded-2xl p-6 shadow-xl shadow-slate-200 space-y-4">
+                    <h3 className="font-bold flex items-center gap-2 text-white">
+                        <Activity className="h-5 w-5 text-green-400" /> Cloud Database (Firestore)
                     </h3>
-                    {dbStatus?.error ? (
-                        <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-mono border border-red-100">
-                            {dbStatus.error}
+                    <div className="space-y-2 text-sm text-slate-300">
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                            <span>Status</span>
+                            <span className="text-green-400 font-bold">Verbunden</span>
                         </div>
-                    ) : (
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-muted-foreground">Lessons Table</span>
-                                <span className="font-bold">{dbStatus?.lessons} Rows</span>
-                            </div>
-                            <div className="flex justify-between border-b pb-2">
-                                <span className="text-muted-foreground">Media Table</span>
-                                <span className="font-bold">{dbStatus?.media} Rows</span>
-                            </div>
-                            <div className="flex justify-between pt-2">
-                                <span className="text-muted-foreground">Progress Table</span>
-                                <span className="font-bold">{dbStatus?.progress} Rows</span>
-                            </div>
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                            <span>Lektionen</span>
+                            <span className="font-bold text-white">{cloudStatus?.lessons || 0}</span>
                         </div>
-                    )}
+                        <div className="flex justify-between border-b border-white/10 pb-2">
+                            <span>Benutzer</span>
+                            <span className="font-bold text-white">{cloudStatus?.users || 0}</span>
+                        </div>
+                        <div className="flex justify-between pt-2">
+                            <span>Vokabeln (Artikeltrainer)</span>
+                            <span className="font-bold text-white">{cloudStatus?.vocabulary || 0}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SQLite Database */}
+                <div className="bg-white border rounded-2xl p-6 shadow-sm space-y-4 opacity-70">
+                    <h3 className="font-bold flex items-center gap-2 text-slate-800">
+                        <Database className="h-5 w-5 text-purple-500" /> Local SQLite (Offline)
+                    </h3>
+                    <div className="p-3 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-bold uppercase tracking-wider mb-2">
+                        Inaktiv im Browser-Modus
+                    </div>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Lessons</span>
+                            <span className="font-bold">0 Rows</span>
+                        </div>
+                        <div className="flex justify-between pt-2">
+                            <span className="text-muted-foreground">Mode</span>
+                            <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-[10px]">Read-Only Fallback</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Routing / State */}
