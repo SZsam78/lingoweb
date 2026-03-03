@@ -103,6 +103,32 @@ export class DB {
         }
     }
 
+    static async updateProgress(userId: string, lessonId: string, itemId: string, status: string, answer: any) {
+        if (!window.electronAPI) {
+            const { doc, setDoc } = await import('firebase/firestore');
+            const ref = doc(firestore, `users/${userId}/progress/${lessonId}`);
+            await setDoc(ref, {
+                [itemId]: { status, answer, timestamp: new Date().toISOString() },
+                completed: true, // mark lesson as completed if they checked an answer for now
+                lastUpdated: new Date().toISOString()
+            }, { merge: true });
+        }
+    }
+
+    static async getCompletedLessons(userId: string): Promise<Record<string, boolean>> {
+        if (!window.electronAPI) {
+            const { collection, getDocs } = await import('firebase/firestore');
+            const progressRef = collection(firestore, `users/${userId}/progress`);
+            const snapshot = await getDocs(progressRef);
+            const completed: Record<string, boolean> = {};
+            snapshot.forEach(d => {
+                if (d.data().completed) completed[d.id] = true;
+            });
+            return completed;
+        }
+        return {};
+    }
+
     static async getStats() {
         if (!window.electronAPI) {
             const lessons = await getDocs(collection(firestore, 'lessons'));

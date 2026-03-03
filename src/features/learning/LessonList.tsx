@@ -3,6 +3,7 @@ import { LESSONS_PER_MODULE } from '@/content/meta';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, CheckCircle2, PlayCircle, Loader2 } from 'lucide-react';
 import { DB } from '@/lib/db';
+import { AuthService } from '@/lib/auth';
 
 interface LessonListProps {
     moduleId: string;
@@ -19,6 +20,7 @@ interface LessonItem {
 
 export function LessonList({ moduleId, onSelectLesson, onBack }: LessonListProps) {
     const [lessons, setLessons] = useState<LessonItem[]>([]);
+    const [progress, setProgress] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -27,19 +29,35 @@ export function LessonList({ moduleId, onSelectLesson, onBack }: LessonListProps
             try {
                 // Fetch lessons for this module from the database
                 const dbLessons = await DB.query('SELECT * FROM lessons WHERE moduleId = ?', [moduleId]);
+                const user = AuthService.getCurrentUser();
+                const completedMap = user ? await (DB as any).getCompletedLessons(user.id) : {};
 
                 let mapped: LessonItem[] = [];
 
                 if (dbLessons && dbLessons.length > 0) {
                     mapped = dbLessons.map((doc: any) => {
-                        const data = JSON.parse(doc.content_json || "{}");
+                        let data = doc;
+                        if (doc.content_json) {
+                            try { data = typeof doc.content_json === 'string' ? JSON.parse(doc.content_json) : doc.content_json; } catch (e) { }
+                        }
+
+                        let num = data.order || data.lessonNumber;
+                        if (typeof num !== 'number') {
+                            const match = (data.id || doc.id)?.match(/-L(\d+)/);
+                            num = match ? parseInt(match[1], 10) : 0;
+                        }
+
+                        const lessonId = doc.id || data.id;
                         return {
-                            id: data.id || doc.id,
-                            number: data.order || data.lessonNumber || parseInt((data.id || doc.id)?.split('-L')[1] || '0', 10),
-                            title: data.title || `Lektion`,
-                            completed: false,
+                            id: lessonId,
+                            number: num,
+                            title: data.title || `Lektion ${num}`,
+                            completed: !!completedMap[lessonId],
                         };
                     }).sort((a, b) => a.number - b.number);
+
+                    const completedCount = mapped.filter(l => l.completed).length;
+                    setProgress(Math.round((completedCount / mapped.length) * 100));
                 } else {
                     mapped = Array.from({ length: 144 }, (_, i) => ({
                         id: `${moduleId}-L${String(i + 1).padStart(2, '0')}`,
@@ -92,7 +110,7 @@ export function LessonList({ moduleId, onSelectLesson, onBack }: LessonListProps
                 </div>
                 <div className="text-right">
                     <p className="text-sm font-medium">Gesamtfortschritt</p>
-                    <p className="text-2xl font-bold text-primary">0%</p>
+                    <p className="text-2xl font-bold text-primary">{progress}%</p>
                 </div>
             </div>
 

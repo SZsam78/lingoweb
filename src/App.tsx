@@ -21,7 +21,7 @@ type ViewState =
     | { type: 'tools' }
     | { type: 'admin' }
     | { type: 'lessons', moduleId: string }
-    | { type: 'player', lessonId: string, mode: 'learn' | 'edit' }
+    | { type: 'player', lessonId: string, moduleId: string, mode: 'learn' | 'edit' }
     | { type: 'settings' };
 
 import { firestore } from './lib/firebase';
@@ -99,9 +99,10 @@ function App() {
         } else if (view.type === 'lessons') {
             bcs.push({ label: view.moduleId, onClick: () => { } });
         } else if (view.type === 'player') {
-            const [mod] = view.lessonId.split('-');
-            bcs.push({ label: mod, onClick: () => setView({ type: 'lessons', moduleId: mod }) });
-            bcs.push({ label: `${t('lektionen')} ${view.lessonId.split('-L')[1]}`, onClick: () => { } });
+            bcs.push({ label: view.moduleId, onClick: () => setView({ type: 'lessons', moduleId: view.moduleId }) });
+            // For now, don't show lesson number since ID is generic, or try to extract it from context if we had it.
+            // A simple "Lektion" is better than "undefined"
+            bcs.push({ label: t('lektionen'), onClick: () => { } });
         } else if (view.type === 'settings') {
             bcs.push({ label: t('einstellungen'), onClick: () => { } });
         }
@@ -150,7 +151,7 @@ function App() {
                     {view.type === 'lessons' && (
                         <LessonList
                             moduleId={view.moduleId}
-                            onSelectLesson={(lessonId) => navigateTo({ type: 'player', lessonId, mode: 'learn' })}
+                            onSelectLesson={(lessonId) => navigateTo({ type: 'player', lessonId, moduleId: view.moduleId, mode: 'learn' })}
                             onBack={handleBack}
                         />
                     )}
