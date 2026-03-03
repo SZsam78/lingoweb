@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, Home, ChevronRight, LogOut, User as UserIcon, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from '@/lib/auth';
