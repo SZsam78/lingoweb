@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Users, Database, PlaySquare, ShieldCheck, Zap, Trash2, UploadCloud } from 'lucide-react';
+import { Zap, Trash2, UploadCloud, Users, Database, PlaySquare, ShieldCheck } from 'lucide-react';
 import { DB } from '@/lib/db';
+import { UserList } from './UserList';
 
 export function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'users' | 'content' | 'story'>('content');
@@ -119,14 +120,7 @@ export function AdminDashboard() {
                 )}
 
                 {activeTab === 'users' && (
-                    <div className="flex flex-col items-center justify-center h-[400px] text-center">
-                        <Users className="h-12 w-12 text-slate-200 mb-4" />
-                        <h3 className="font-black text-xl mb-2 text-[#1A1A1A]">Benutzerverwaltung</h3>
-                        <p className="text-sm text-muted-foreground max-w-xs">Hier kannst du Berechtigungen (Rechte-Matrix) für Kundenkonten setzen.</p>
-                        <div className="mt-6 flex flex-wrap gap-2 justify-center italic text-[10px] text-primary/50 font-bold uppercase tracking-widest">
-                            Offline User • Admin • Premium Access
-                        </div>
-                    </div>
+                    <UserList />
                 )}
 
                 {activeTab === 'story' && (

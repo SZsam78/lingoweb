@@ -7,6 +7,7 @@ import { Header } from './components/Header';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
 import { Artikeltrainer } from './features/learning/Artikeltrainer';
 import { AdminDashboard } from './features/admin/AdminDashboard';
+import { StoryMode } from './features/story/StoryMode';
 
 type ViewState =
     | { type: 'modules' }
@@ -97,10 +98,7 @@ function App() {
                     )}
 
                     {view.type === 'story' && (
-                        <div className="p-20 text-center">
-                            <h2 className="text-2xl font-black mb-4">Story-Modus</h2>
-                            <p className="text-muted-foreground">Wird geladen...</p>
-                        </div>
+                        <StoryMode />
                     )}
 
                     {view.type === 'admin' && (
