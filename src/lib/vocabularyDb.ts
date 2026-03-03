@@ -1,3 +1,15 @@
+import { firestore } from './firebase';
+import {
+    collection,
+    getDocs,
+    query,
+    where,
+    writeBatch,
+    doc,
+    setDoc,
+    deleteDoc
+} from 'firebase/firestore';
+
 export interface VocabularyItem {
     id: string;
     lemma: string;
@@ -8,37 +20,36 @@ export interface VocabularyItem {
 }
 
 export class VocabularyDB {
-    static async getVocabularyByLevel(level: string): Promise<VocabularyItem[]> {
-        if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.dbQuery === 'function') {
-            // Wait for DB support in Electron later, fallback to mock/localStorage for now
-            return this._getFromStorage().filter((v: VocabularyItem) => v.level === level);
-        }
+    private static COLLECTION = 'vocabulary';
 
-        // Browser Fallback
-        return this._getFromStorage().filter(v => v.level === level);
+    static async getVocabularyByLevel(level: string): Promise<VocabularyItem[]> {
+        const q = query(
+            collection(firestore, this.COLLECTION),
+            where('level', '==', level)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as VocabularyItem));
     }
 
     static async getAllVocabulary(): Promise<VocabularyItem[]> {
-        if (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.dbQuery === 'function') {
-            return this._getFromStorage();
-        }
-        return this._getFromStorage();
+        const snapshot = await getDocs(collection(firestore, this.COLLECTION));
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as VocabularyItem));
     }
 
     static async importVocabulary(items: VocabularyItem[]): Promise<void> {
-        // Simple mock: we append or replace using LocalStorage. We'll replace all for simplicity in this demo.
-        const existing = this._getFromStorage();
+        const batch = writeBatch(firestore);
 
-        // Merge strategy: Create a map by lemma to avoid duplicates
-        const map = new Map<string, VocabularyItem>();
-        existing.forEach(v => map.set(v.lemma, v));
-        items.forEach(v => {
-            if (!v.id) v.id = crypto.randomUUID();
-            map.set(v.lemma, v);
+        items.forEach(item => {
+            const id = item.id || crypto.randomUUID();
+            const ref = doc(firestore, this.COLLECTION, id);
+            batch.set(ref, {
+                ...item,
+                id,
+                updatedAt: new Date().toISOString()
+            });
         });
 
-        const merged = Array.from(map.values());
-        localStorage.setItem('vocabulary_db', JSON.stringify(merged));
+        await batch.commit();
     }
 
     static async prefillDefaultData(): Promise<void> {
@@ -58,16 +69,9 @@ export class VocabularyDB {
     }
 
     static async clearAll(): Promise<void> {
-        localStorage.removeItem('vocabulary_db');
-    }
-
-    private static _getFromStorage(): VocabularyItem[] {
-        const data = localStorage.getItem('vocabulary_db');
-        if (!data) return [];
-        try {
-            return JSON.parse(data) as VocabularyItem[];
-        } catch {
-            return [];
-        }
+        const snapshot = await getDocs(collection(firestore, this.COLLECTION));
+        const batch = writeBatch(firestore);
+        snapshot.forEach(d => batch.delete(d.ref));
+        await batch.commit();
     }
 }
