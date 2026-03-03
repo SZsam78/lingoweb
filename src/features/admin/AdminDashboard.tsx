@@ -82,8 +82,8 @@ export function AdminDashboard() {
                                     className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-primary/20 bg-primary/5 rounded-3xl hover:bg-primary/10 transition-all group"
                                 >
                                     <Zap className="h-10 w-10 text-primary mb-3 group-hover:scale-110 transition-transform" />
-                                    <span className="font-black text-primary text-center">INITIAL-LOAD (A1 - B2)</span>
-                                    <span className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">554 Lektionen laden</span>
+                                    <span className="font-black text-primary text-center">INITIAL-LOAD (A1 - A2)</span>
+                                    <span className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">576 Lektionen laden</span>
                                 </button>
 
                                 <div className="flex flex-col gap-4 p-6 bg-slate-50 rounded-3xl border">
