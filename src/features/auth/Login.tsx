@@ -104,7 +104,7 @@ export function Login({ onLogin }: LoginProps) {
 
                 <div className="text-center">
                     <p className="text-[11px] text-muted-foreground font-bold">
-                        &copy; {new Date().getFullYear()} LingoLume Advanced Agentic Coding
+                        &copy; {new Date().getFullYear()} Lume Media
                     </p>
                 </div>
             </div>
