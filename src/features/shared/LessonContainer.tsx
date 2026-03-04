@@ -8,9 +8,10 @@ interface LessonContainerProps {
     lessonId: string;
     initialMode?: 'learn' | 'edit';
     onBack: () => void;
+    onNextLesson?: (lessonId: string, moduleId?: string) => void;
 }
 
-export function LessonContainer({ lessonId, initialMode = 'learn', onBack }: LessonContainerProps) {
+export function LessonContainer({ lessonId, initialMode = 'learn', onBack, onNextLesson }: LessonContainerProps) {
     const [mode, setMode] = useState<'learn' | 'edit'>(initialMode);
 
     return (
@@ -41,7 +42,7 @@ export function LessonContainer({ lessonId, initialMode = 'learn', onBack }: Les
 
             <div className="flex-1 overflow-auto">
                 {mode === 'learn' ? (
-                    <LessonPlayer lessonId={lessonId} onBack={onBack} />
+                    <LessonPlayer lessonId={lessonId} onBack={onBack} onNextLesson={onNextLesson} />
                 ) : (
                     <LessonEditor lessonId={lessonId} />
                 )}

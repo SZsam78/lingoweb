@@ -10,6 +10,7 @@ import { AuthService } from '@/lib/auth';
 interface LessonPlayerProps {
     lessonId: string;
     onBack: () => void;
+    onNextLesson?: (lessonId: string, moduleId?: string) => void;
 }
 
 // Adapts the flat JSON structure from Google Docs to the nested structure expected by the UI
@@ -128,7 +129,7 @@ function adaptLessonFormat(parsed: any): Lesson {
     };
 }
 
-export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
+export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerProps) {
     const { t } = useTranslation();
     const user = AuthService.getCurrentUser();
     const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -196,6 +197,54 @@ export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
     const handleReset = () => {
         setAllAnswers(prev => ({ ...prev, [currentSection.id]: {} }));
         setShowResults(prev => ({ ...prev, [currentSection.id]: false }));
+    };
+
+    const handleNextLesson = async () => {
+        if (!lesson || !onNextLesson) {
+            onBack();
+            return;
+        }
+
+        try {
+            const dbLessons = await DB.query('SELECT * FROM lessons WHERE moduleId = ?', [lesson.moduleId]);
+
+            let mapped = dbLessons.map((doc: any) => {
+                let data = doc;
+                if (doc.content_json) {
+                    try { data = typeof doc.content_json === 'string' ? JSON.parse(doc.content_json) : doc.content_json; } catch (e) { }
+                }
+                let num = data.order || data.lessonNumber;
+                if (typeof num !== 'number') {
+                    const match = (data.id || doc.id)?.match(/-L(\d+)/);
+                    num = match ? parseInt(match[1], 10) : 0;
+                }
+                return {
+                    id: doc.id || data.id,
+                    number: num
+                };
+            }).sort((a: any, b: any) => a.number - b.number);
+
+            const currentIndex = mapped.findIndex((l: any) => l.id === lessonId);
+
+            if (currentIndex !== -1 && currentIndex < mapped.length - 1) {
+                // Next lesson in current module
+                onNextLesson(mapped[currentIndex + 1].id, lesson.moduleId);
+            } else {
+                // Module finished, transition to next module
+                const { MODULES } = await import('@/content/meta');
+                const modIndex = MODULES.findIndex(m => m.id === lesson.moduleId);
+                if (modIndex !== -1 && modIndex < MODULES.length - 1) {
+                    const nextModuleId = MODULES[modIndex + 1].id;
+                    // For simplicity, just send them to the first logical lesson of the next module
+                    onNextLesson(`${nextModuleId}-L01`, nextModuleId);
+                } else {
+                    onBack(); // End of all modules
+                }
+            }
+        } catch (e) {
+            console.error("Navigation error", e);
+            onBack();
+        }
     };
 
     return (
@@ -274,8 +323,7 @@ export function LessonPlayer({ lessonId, onBack }: LessonPlayerProps) {
                     <button
                         onClick={() => {
                             if (currentSectionIndex === lesson.sections.length - 1) {
-                                // Reached the end -> "Next" triggers back to module overview or next task
-                                onBack();
+                                handleNextLesson();
                             } else {
                                 setCurrentSectionIndex(prev => prev + 1);
                             }

@@ -161,6 +161,12 @@ function App() {
                             lessonId={view.lessonId}
                             initialMode={view.mode}
                             onBack={handleBack}
+                            onNextLesson={(newLessonId, newModuleId) => navigateTo({
+                                type: 'player',
+                                lessonId: newLessonId,
+                                moduleId: newModuleId || view.moduleId,
+                                mode: 'learn'
+                            })}
                         />
                     )}
 
