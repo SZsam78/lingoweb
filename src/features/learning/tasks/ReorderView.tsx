@@ -8,9 +8,11 @@ interface ReorderProps {
     answers: Record<string, string[]>;
     onAnswer: (itemId: string, answer: string[]) => void;
     showResults: boolean;
+    isEditing?: boolean;
+    onChange?: (itemId: string, updates: any) => void;
 }
 
-export function ReorderView({ items, answers, onAnswer, showResults }: ReorderProps) {
+export function ReorderView({ items, answers, onAnswer, showResults, isEditing = false, onChange }: ReorderProps) {
     return (
         <div className="flex flex-col gap-12">
             {items.map((item) => {
@@ -22,7 +24,7 @@ export function ReorderView({ items, answers, onAnswer, showResults }: ReorderPr
                 const [resultWords, setResultWords] = useState<string[]>([]);
 
                 useEffect(() => {
-                    const original = item.prompt.split(' / ');
+                    const original = (item.sentence || item.prompt || "").split(' / ');
                     if (!answers[item.id]) {
                         setAvailableWords([...original].sort(() => Math.random() - 0.5));
                         setResultWords([]);
@@ -59,7 +61,42 @@ export function ReorderView({ items, answers, onAnswer, showResults }: ReorderPr
 
                 return (
                     <div key={item.id} className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                        {item.meta?.audioUrl && <AudioPlayer url={item.meta.audioUrl} />}
+                        {isEditing ? (
+                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-dashed border-slate-300">
+                                <span className="material-symbols-outlined text-sm text-slate-400">link</span>
+                                <input
+                                    value={item.meta?.audioUrl || ""}
+                                    onChange={(e) => onChange!(item.id, { meta: { ...item.meta, audioUrl: e.target.value } })}
+                                    placeholder="Audio URL"
+                                    className="flex-1 bg-transparent text-xs outline-none"
+                                />
+                            </div>
+                        ) : (
+                            item.meta?.audioUrl && <AudioPlayer url={item.meta.audioUrl} />
+                        )}
+
+                        {isEditing && (
+                            <div className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-6 rounded-3xl border-2 border-dashed border-slate-200">
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Wort-Pool (mit / getrennt)</h4>
+                                    <input
+                                        value={item.sentence || item.prompt || ""}
+                                        onChange={(e) => onChange!(item.id, { sentence: e.target.value })}
+                                        className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 outline-none font-bold"
+                                        placeholder="Wort 1 / Wort 2 / Wort 3..."
+                                    />
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Richtige Lösung (Wörter mit Leerzeichen)</h4>
+                                    <input
+                                        value={item.solution?.join(' ') || ""}
+                                        onChange={(e) => onChange!(item.id, { solution: e.target.value.split(' ').filter(s => s.trim()) })}
+                                        className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 outline-none font-bold text-primary"
+                                        placeholder="Die richtige Antwort..."
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-4">
                             <div className={cn(

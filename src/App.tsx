@@ -47,6 +47,29 @@ function App() {
         }
     }, [isDarkMode]);
 
+    // Browser History Synchronization
+    useEffect(() => {
+        const handlePopState = (event: PopStateEvent) => {
+            if (event.state && event.state.view) {
+                setView(event.state.view);
+                // Also update history stack to allow "going back" multiple times correctly
+                // Note: This is an approximation since we manage history state manually as well
+                setHistory(prev => prev.slice(0, -1));
+            } else {
+                setView({ type: 'modules' });
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        // Initial state for the first page load
+        if (!window.history.state) {
+            window.history.replaceState({ view }, '');
+        }
+
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
     useEffect(() => {
         if (!user || user.role === 'admin') return;
 
@@ -81,6 +104,10 @@ function App() {
         }
         sessionStorage.removeItem('unsaved_changes');
         sessionStorage.setItem('last_nav', `navigate to: ${JSON.stringify(nextView)}`);
+
+        // Push to browser history
+        window.history.pushState({ view: nextView }, '');
+
         setHistory(prev => [...prev, view]);
         setView(nextView);
     };
@@ -92,11 +119,10 @@ function App() {
             }
         }
         sessionStorage.removeItem('unsaved_changes');
+
         if (history.length > 0) {
-            const prev = history[history.length - 1];
-            sessionStorage.setItem('last_nav', `back to: ${JSON.stringify(prev)}`);
-            setHistory(prevHistory => prevHistory.slice(0, -1));
-            setView(prev);
+            // Trigger browser back for consistency
+            window.history.back();
         }
     };
 

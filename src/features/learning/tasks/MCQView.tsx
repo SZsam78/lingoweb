@@ -8,16 +8,42 @@ interface MCQProps {
     answers: Record<string, any>;
     onAnswer: (itemId: string, answer: any) => void;
     showResults: boolean;
+    isEditing?: boolean;
+    onChange?: (itemId: string, updates: any) => void;
 }
 
-export function MCQView({ items, answers, onAnswer, showResults }: MCQProps) {
+export function MCQView({ items, answers, onAnswer, showResults, isEditing = false, onChange }: MCQProps) {
     return (
         <div className="flex flex-col gap-10">
             {items.map((item) => (
                 <div key={item.id} className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    {item.meta?.audioUrl && (
-                        <div className="mb-2">
-                            <AudioPlayer url={item.meta.audioUrl} />
+                    {isEditing ? (
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-dashed border-slate-300 mb-4">
+                            <span className="material-symbols-outlined text-sm text-slate-400">link</span>
+                            <input
+                                value={item.meta?.audioUrl || ""}
+                                onChange={(e) => onChange!(item.id, { meta: { ...item.meta, audioUrl: e.target.value } })}
+                                placeholder="Audio URL"
+                                className="flex-1 bg-transparent text-xs outline-none"
+                            />
+                        </div>
+                    ) : (
+                        item.meta?.audioUrl && (
+                            <div className="mb-2">
+                                <AudioPlayer url={item.meta.audioUrl} />
+                            </div>
+                        )
+                    )}
+                    {isEditing && (
+                        <div className="mb-6">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Frage</h4>
+                            <textarea
+                                value={item.question || item.prompt || ""}
+                                onChange={(e) => onChange!(item.id, { question: e.target.value })}
+                                className="w-full bg-transparent border-b border-dashed border-slate-300 outline-none resize-none font-bold text-xl"
+                                placeholder="Frage eingeben..."
+                                rows={2}
+                            />
                         </div>
                     )}
                     <div className="grid grid-cols-1 gap-4">
@@ -57,12 +83,38 @@ export function MCQView({ items, answers, onAnswer, showResults }: MCQProps) {
                                             ) : null}
                                         </div>
                                         <div className="flex grow flex-col text-left">
-                                            <p className={cn(
-                                                "text-xl tracking-tight transition-colors",
-                                                isSelected ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
-                                            )}>
-                                                {choice.text}
-                                            </p>
+                                            {isEditing ? (
+                                                <div className="flex flex-col gap-2">
+                                                    <input
+                                                        value={choice.text}
+                                                        onChange={(e) => {
+                                                            const newChoices = item.choices.map((c: any) => c.id === choice.id ? { ...c, text: e.target.value } : c);
+                                                            onChange!(item.id, { choices: newChoices });
+                                                        }}
+                                                        className="bg-transparent border-b border-dashed border-primary/30 outline-none w-full font-bold text-lg"
+                                                        placeholder="Optionstext"
+                                                    />
+                                                    <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={choice.isCorrect}
+                                                            onChange={(e) => {
+                                                                const newChoices = item.choices.map((c: any) => c.id === choice.id ? { ...c, isCorrect: e.target.checked } : c);
+                                                                onChange!(item.id, { choices: newChoices });
+                                                            }}
+                                                            className="accent-primary"
+                                                        />
+                                                        <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Richtig</span>
+                                                    </label>
+                                                </div>
+                                            ) : (
+                                                <p className={cn(
+                                                    "text-xl tracking-tight transition-colors",
+                                                    isSelected ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                                                )}>
+                                                    {choice.text}
+                                                </p>
+                                            )}
                                         </div>
 
                                         {showResults && isCorrect && !isSelected && (

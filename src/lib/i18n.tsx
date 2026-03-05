@@ -38,6 +38,7 @@ const translations = {
         lernressourcen: 'Lernressourcen',
         ueberspringen: 'Überspringen',
         abgeschlossen: 'abgeschlossen',
+        kontext_vokabeln: 'Kontext & Vokabeln',
     },
     en: {
         lernplan: 'Learning Plan',
@@ -74,6 +75,7 @@ const translations = {
         lernressourcen: 'Learning Resources',
         ueberspringen: 'Skip',
         abgeschlossen: 'completed',
+        kontext_vokabeln: 'Context & Vocabulary',
     },
     fr: {
         lernplan: 'Plan d\'apprentissage',
@@ -110,6 +112,7 @@ const translations = {
         lernressourcen: 'Ressources d\'apprentissage',
         ueberspringen: 'Passer',
         abgeschlossen: 'terminé',
+        kontext_vokabeln: 'Contexte & Vocabulaire',
     },
     es: {
         lernplan: 'Plan de aprendizaje',
@@ -146,6 +149,7 @@ const translations = {
         lernressourcen: 'Recursos de aprendizaje',
         ueberspringen: 'Omitir',
         abgeschlossen: 'completado',
+        kontext_vokabeln: 'Contexto y Vocabulario',
     },
     ar: {
         lernplan: 'خطة التعلم',
@@ -182,6 +186,7 @@ const translations = {
         lernressourcen: 'مصادر التعلم',
         ueberspringen: 'تخطي',
         abgeschlossen: 'مكتمل',
+        kontext_vokabeln: 'السياق والمفردات',
     },
     uk: {
         lernplan: 'План навчання',
@@ -218,6 +223,7 @@ const translations = {
         lernressourcen: 'Навчальні ресурси',
         ueberspringen: 'Пропустити',
         abgeschlossen: 'завершено',
+        kontext_vokabeln: 'Контекст і Словник',
     },
     ja: {
         lernplan: '学習プラン',
@@ -254,6 +260,7 @@ const translations = {
         lernressourcen: '学習リソース',
         ueberspringen: 'スキップ',
         abgeschlossen: '完了',
+        kontext_vokabeln: '文脈と語彙',
     },
     hi: {
         lernplan: 'सीखने की योजना',
@@ -290,6 +297,7 @@ const translations = {
         lernressourcen: 'सीखने के संसाधन',
         ueberspringen: 'छोड़ें',
         abgeschlossen: 'पूरा हुआ',
+        kontext_vokabeln: 'संदर्भ और शब्दावली',
     }
 };
 

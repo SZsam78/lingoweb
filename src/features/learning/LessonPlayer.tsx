@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lesson, Section } from '@/content/schema';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, CheckCircle, RotateCcw, Lightbulb } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, RotateCcw, Lightbulb, Save } from 'lucide-react';
 import { TaskRenderer } from './TaskRenderer';
 import { DB } from '@/lib/db';
 import { useTranslation } from '@/lib/i18n';
@@ -12,6 +12,7 @@ interface LessonPlayerProps {
     lessonId: string;
     onBack: () => void;
     onNextLesson?: (lessonId: string, moduleId?: string) => void;
+    isEditing?: boolean;
 }
 
 // Adapts the flat JSON structure from Google Docs to the nested structure expected by the UI
@@ -130,12 +131,14 @@ function adaptLessonFormat(parsed: any): Lesson {
     };
 }
 
-export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerProps) {
+export function LessonPlayer({ lessonId, onBack, onNextLesson, isEditing = false }: LessonPlayerProps) {
     const { t } = useTranslation();
     const user = AuthService.getCurrentUser();
     const [lesson, setLesson] = useState<Lesson | null>(null);
+    const [draftLesson, setDraftLesson] = useState<Lesson | null>(null);
     const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Answers state: { [sectionId]: { [itemId]: answer } }
     const [allAnswers, setAllAnswers] = useState<Record<string, Record<string, any>>>({});
@@ -145,16 +148,18 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
         const loadLesson = async () => {
             try {
                 const data = await DB.getLesson(lessonId);
+                let parsed: Lesson | null = null;
                 if (data) {
-                    let parsed = JSON.parse(data.content_json);
+                    parsed = JSON.parse(data.content_json);
                     parsed = adaptLessonFormat(parsed);
-                    setLesson(parsed);
                 } else {
                     console.warn("Lesson not found in DB, checking legacy local files...");
                     const [module, id] = lessonId.split('-');
                     const moduleContent = await import(`../../content/${module}/${id}.json`);
-                    setLesson(adaptLessonFormat(moduleContent.default));
+                    parsed = adaptLessonFormat(moduleContent.default);
                 }
+                setLesson(parsed);
+                if (isEditing) setDraftLesson(JSON.parse(JSON.stringify(parsed)));
             } catch (error) {
                 console.error("Failed to load lesson:", error);
             } finally {
@@ -164,13 +169,25 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
         loadLesson();
     }, [lessonId]);
 
+    useEffect(() => {
+        if (isEditing && lesson && !draftLesson) {
+            setDraftLesson(JSON.parse(JSON.stringify(lesson)));
+        } else if (!isEditing) {
+            setDraftLesson(null);
+        }
+    }, [isEditing, lesson]);
+
     if (loading) return <div className="p-8 text-center dark:text-white">Laden...</div>;
     if (!lesson) return <div className="p-8 text-center text-destructive dark:text-red-400">Lektion nicht gefunden.</div>;
 
-    const currentSection = lesson.sections[currentSectionIndex];
-    const progress = ((currentSectionIndex + 1) / lesson.sections.length) * 100;
+    const activeLesson = isEditing ? draftLesson : lesson;
+    if (!activeLesson) return null;
+
+    const currentSection = activeLesson.sections[currentSectionIndex];
+    const progress = ((currentSectionIndex + 1) / activeLesson.sections.length) * 100;
 
     const handleAnswer = (itemId: string, answer: any) => {
+        if (isEditing) return; // Disable interactive answers in edit mode
         setAllAnswers(prev => ({
             ...prev,
             [currentSection.id]: {
@@ -178,6 +195,56 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
                 [itemId]: answer
             }
         }));
+    };
+
+    const handleDraftUpdate = (updates: Partial<Lesson>) => {
+        setDraftLesson(prev => prev ? { ...prev, ...updates } : null);
+        sessionStorage.setItem('unsaved_changes', 'true');
+    };
+
+    const handleSectionUpdate = (sectionId: string, updates: Partial<Section>) => {
+        setDraftLesson(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                sections: prev.sections.map(s => s.id === sectionId ? { ...s, ...updates } : s)
+            };
+        });
+        sessionStorage.setItem('unsaved_changes', 'true');
+    };
+
+    const handleItemUpdate = (sectionId: string, itemId: string, updates: any) => {
+        setDraftLesson(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                sections: prev.sections.map(s => {
+                    if (s.id !== sectionId) return s;
+                    return {
+                        ...s,
+                        items: s.items.map(item => item.id === itemId ? { ...item, ...updates } : item)
+                    };
+                })
+            };
+        });
+        sessionStorage.setItem('unsaved_changes', 'true');
+    };
+
+    const handleSave = async () => {
+        if (!draftLesson) return;
+        setIsSaving(true);
+        try {
+            await DB.saveLesson(draftLesson);
+            setLesson(JSON.parse(JSON.stringify(draftLesson)));
+            sessionStorage.removeItem('unsaved_changes');
+            // Notify user or parent? For now just local success
+            console.log("Lesson saved successfully");
+        } catch (error) {
+            console.error("Failed to save lesson:", error);
+            alert("Fehler beim Speichern der Lektion.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCheck = async () => {
@@ -283,7 +350,13 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
                     </button>
                     <div className="hidden md:flex flex-col">
                         <h2 className="text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
-                            {lesson.title}
+                            {isEditing ? (
+                                <input
+                                    value={activeLesson.title}
+                                    onChange={(e) => handleDraftUpdate({ title: e.target.value })}
+                                    className="bg-transparent border-b border-dashed border-slate-300 focus:border-primary outline-none px-1"
+                                />
+                            ) : activeLesson.title}
                         </h2>
                     </div>
                 </div>
@@ -349,13 +422,22 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
 
                         <div className="flex-1 min-h-0 flex flex-col">
                             <p className="text-sm font-bold mb-3 text-slate-600 dark:text-slate-300 uppercase tracking-widest px-1">
-                                Kontext & Vokabeln
+                                {t('kontext_vokabeln')}
                             </p>
                             <div className="flex-1 bg-white dark:bg-surface-dark rounded-2xl p-6 border border-slate-200 dark:border-surface-darker shadow-sm overflow-y-auto custom-scrollbar transition-all">
                                 <div className="prose prose-sm dark:prose-invert text-slate-600 dark:text-slate-400">
-                                    <p className="mb-6 leading-relaxed font-medium">
-                                        {lesson.sections[0].instruction || "In dieser Lektion vertiefst du dein Verständnis durch interaktive Übungen."}
-                                    </p>
+                                    <div className="mb-6 leading-relaxed font-medium">
+                                        {isEditing ? (
+                                            <textarea
+                                                value={currentSection.instruction || ""}
+                                                onChange={(e) => handleSectionUpdate(currentSection.id, { instruction: e.target.value })}
+                                                className="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-primary outline-none resize-none min-h-[100px]"
+                                                placeholder="Anweisungen für diese Sektion..."
+                                            />
+                                        ) : (
+                                            <p>{currentSection.instruction || "In dieser Lektion vertiefst du dein Verständnis durch interaktive Übungen."}</p>
+                                        )}
+                                    </div>
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center py-3 border-b border-slate-50 dark:border-slate-800 group hover:bg-slate-50 dark:hover:bg-slate-800 -mx-2 px-2 rounded-lg transition-colors">
@@ -395,11 +477,26 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
                                     </p>
                                 </div>
                                 <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-6 text-slate-900 dark:text-white tracking-tight">
-                                    {currentSection.title}
+                                    {isEditing ? (
+                                        <input
+                                            value={currentSection.title}
+                                            onChange={(e) => handleSectionUpdate(currentSection.id, { title: e.target.value })}
+                                            className="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-primary outline-none"
+                                        />
+                                    ) : currentSection.title}
                                 </h1>
-                                <p className="text-slate-500 dark:text-slate-400 text-lg font-medium leading-relaxed">
-                                    {currentSection.instruction || "Wähle die richtige Antwort basierend auf dem Material."}
-                                </p>
+                                <div className="text-slate-500 dark:text-slate-400 text-lg font-medium leading-relaxed">
+                                    {isEditing ? (
+                                        <textarea
+                                            value={currentSection.instruction || ""}
+                                            onChange={(e) => handleSectionUpdate(currentSection.id, { instruction: e.target.value })}
+                                            className="w-full bg-transparent border-b border-dashed border-slate-300 focus:border-primary outline-none resize-none"
+                                            rows={2}
+                                        />
+                                    ) : (
+                                        <p>{currentSection.instruction || "Wähle die richtige Antwort basierend auf dem Material."}</p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="pb-24">
@@ -408,6 +505,8 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
                                     answers={allAnswers[currentSection.id] || {}}
                                     onAnswer={handleAnswer}
                                     showResults={showResults[currentSection.id] || false}
+                                    isEditing={isEditing}
+                                    onChange={(itemId, updates) => handleItemUpdate(currentSection.id, itemId, updates)}
                                 />
                             </div>
                         </div>
@@ -418,35 +517,49 @@ export function LessonPlayer({ lessonId, onBack, onNextLesson }: LessonPlayerPro
             <footer className="border-t border-slate-200 dark:border-surface-darker bg-white dark:bg-surface-dark py-6 px-10 shrink-0 z-10 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] transition-colors">
                 <div className="max-w-[1400px] mx-auto flex justify-between items-center gap-4 md:gap-8">
                     <button
-                        onClick={handleReset}
-                        className="hidden sm:flex items-center justify-center rounded-2xl h-14 px-10 bg-slate-100 dark:bg-surface-darker text-slate-600 dark:text-slate-300 font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all uppercase tracking-widest text-xs border-b-4 border-b-slate-200 dark:border-b-black/20"
+                        onClick={onBack}
+                        className="flex items-center justify-center rounded-2xl h-14 px-10 bg-slate-100 dark:bg-surface-darker text-slate-600 dark:text-slate-300 font-black hover:bg-slate-200 dark:hover:bg-slate-700 transition-all uppercase tracking-widest text-xs border-b-4 border-b-slate-200 dark:border-b-black/20"
                     >
-                        {t('ueberspringen')}
+                        {t('zurueck')}
                     </button>
 
-                    <div className="flex-1 sm:hidden"></div>
+                    <div className="flex-1 md:flex-none"></div>
 
-                    <div className="flex gap-4 w-full sm:w-auto flex-1 sm:flex-none">
-                        <button
-                            onClick={handleCheck}
-                            className="flex items-center justify-center rounded-2xl h-14 px-16 flex-1 sm:flex-none sm:w-80 bg-primary text-white text-lg font-black shadow-xl shadow-orange-500/20 hover:bg-orange-600 active:transform active:translate-y-1 transition-all uppercase tracking-widest border-b-4 border-b-orange-700/30"
-                        >
-                            {t('pruefen')}
-                        </button>
-
-                        {(showResults[currentSection.id]) && (
+                    <div className="flex gap-4 w-full sm:w-auto flex-1 sm:flex-none justify-end">
+                        {isEditing ? (
                             <button
-                                onClick={() => {
-                                    if (currentSectionIndex === lesson.sections.length - 1) {
-                                        handleNextLesson();
-                                    } else {
-                                        setCurrentSectionIndex(prev => prev + 1);
-                                    }
-                                }}
-                                className="flex items-center justify-center rounded-2xl h-14 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-2 border-slate-900 dark:border-white font-black hover:opacity-90 transition-all uppercase tracking-widest text-xs"
+                                onClick={handleSave}
+                                disabled={isSaving || !draftLesson}
+                                className="flex items-center justify-center rounded-2xl h-14 px-12 bg-primary text-white text-lg font-black shadow-xl shadow-orange-500/20 hover:bg-orange-600 active:transform active:translate-y-1 transition-all uppercase tracking-widest border-b-4 border-b-orange-700/30"
                             >
-                                <span className="material-symbols-outlined">arrow_forward</span>
+                                <Save className="h-5 w-5 mr-2" />
+                                {isSaving ? "Speichert..." : "Änderungen Speichern"}
                             </button>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleCheck}
+                                    className="flex items-center justify-center rounded-2xl h-14 px-16 bg-primary text-white text-lg font-black shadow-xl shadow-orange-500/20 hover:bg-orange-600 active:transform active:translate-y-1 transition-all uppercase tracking-widest border-b-4 border-b-orange-700/30"
+                                >
+                                    {t('pruefen')}
+                                </button>
+
+                                {showResults[currentSection.id] && (
+                                    <button
+                                        onClick={() => {
+                                            if (currentSectionIndex === activeLesson.sections.length - 1) {
+                                                handleNextLesson();
+                                            } else {
+                                                setCurrentSectionIndex(prev => prev + 1);
+                                            }
+                                        }}
+                                        className="flex items-center justify-center rounded-2xl h-14 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-2 border-slate-900 dark:border-white font-black hover:opacity-90 transition-all uppercase tracking-widest text-xs"
+                                    >
+                                        <span className="material-symbols-outlined">arrow_forward</span>
+                                        <span className="ml-2">Weiter</span>
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
